@@ -1,0 +1,2 @@
+# Copy it to /etc/cron.d
+*/5 * * * * user test -f /home/user/pku-auto-connect/connect.sh && bash /home/user/pku-auto-connect/connect.sh >> /home/user/pku-auto-connect/connect.log 2>&1

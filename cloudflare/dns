@@ -1,0 +1,2 @@
+# Copy to /etc/cron.d
+*/30 * * * * user test -f /home/user/cloudflare/dns.sh && bash /home/user/cloudflare/dns.sh >> /home/user/cloudflare/dns.log 2>&1

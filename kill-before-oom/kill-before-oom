@@ -1,0 +1,2 @@
+# copy it to /etc/cron.d
+*/5 * * * * root test -f /home/user/kill-before-oom/kill-before-oom.sh && bash  /home/user/kill-before-oom/kill-before-oom.sh >>  /home/user/kill-before-oom/kill-before-oom.log 2>&1

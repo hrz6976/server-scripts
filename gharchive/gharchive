@@ -1,0 +1,2 @@
+### Add this file to /etc/cron.d to run it every day ###
+55 8 * * * user test -x /archive/gharchive/sync.sh && DOWNLOAD_DIR="/archive/gharchive/temp" bash /archive/gharchive/sync.sh >> /archive/gharchive/sync.log 2>&1
