@@ -32,6 +32,9 @@ USERNAME=${1}
 shift
 AUTHORIZED_KEYS=${@}
 
+# prompt for user id
+read -p "Enter the user id (UID) or leave blank for default: " USER_UID
+
 # Create the user with the password.
 if [[ -z "${USER_UID}" ]]; then
   useradd -m ${USERNAME}
@@ -102,64 +105,19 @@ else
   chsh -s /bin/bash ${USERNAME}
 fi
 
-# Define the function
-select_mount() {
-    # Set the threshold for disk usage (in percentage)
-    local threshold=50
-
-    # Initialize the available mount points array
-    local available=()
-
-    # Loop over each mount point and check its disk usage
-    for mount in "$@"
-    do
-        # Get the current disk usage (in percentage)
-        local usage=$(df -h "$mount" | awk 'NR==2 { print substr($5, 1, length($5)-1) }')
-
-        # If the usage is below the threshold, add this mount point to the available list
-        if (( $usage < $threshold )); then
-            available+=("$mount")
-        fi
-    done
-
-    # If there are any available mount points, select one at random; otherwise, select the one with the most space
-    if (( ${#available[@]} > 0 )); then
-        # Select a random mount point from the available list
-        local selected=${available[$RANDOM % ${#available[@]}]}
-    else
-        # Sort the mounts by their available space and select the first one (i.e., the one with the most space)
-        local selected=$(df -h "$@" | awk '{ print $6, substr($4, 1, length($4)-1) }' | sort -nk2 | tail -n1 | awk '{ print $1 }')
-    fi
-
-    # Return the selected mount point
-    echo "$selected"
-}
-
 # create user folders
 read -p "Create user folders? (y/n) " -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]]
 then
   # Create user folders. (unified)
-  for folder in "/data" "/raid"
+  for folder in "/data" "/raid" "/fast"
   do
     if [[ -d ${folder} && ! -d "${folder}/${USERNAME}" ]]
     then
       mkdir -p "${folder}/${USERNAME}"
       echo "Created user folder: ${folder}/${USERNAME}"
       chown -R ${USERNAME}:${USERNAME} "${folder}/${USERNAME}"
-    fi
-  done
-    # Create user folders. (mapped)
-  for folder in "/fast"
-  do
-    if [[ -d ${folder} && ! -d "${folder}/${USERNAME}" ]]
-    then
-      selected=$(select_mount "/mnt/nvme{0..3}")
-      mkdir -p "${selected}/${USERNAME}"
-      echo "Created user folder: ${selected}/${USERNAME}"
-      chown -R ${USERNAME}:${USERNAME} "${selected}/${USERNAME}"
-      ln -s "${selected}/${USERNAME}" "${folder}/${USERNAME}" 
     fi
   done
 fi
