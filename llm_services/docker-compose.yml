@@ -1,0 +1,83 @@
+version: '3'
+
+services:
+  litellm:
+    image: ghcr.io/berriai/litellm:main-latest
+    container_name: litellm
+    volumes:
+      - ./litellm_config.yaml:/app/config.yaml
+      # - ./gcloud_client_secret.json:/app/service_account.json
+    environment:
+      - https_proxy=${HTTPS_PROXY}
+      - LITELLM_MASTER_KEY=${LITELLM_MASTER_KEY}
+      # - GOOGLE_APPLICATION_CREDENTIALS=/app/service_account.json
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    networks:
+      - proxied
+    restart: unless-stopped
+    command: --config /app/config.yaml
+
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    ports:
+      - "33030:8080"
+    volumes:
+      - ./open-webui:/app/backend/data
+    environment:
+      - HTTPS_PROXY=${HTTPS_PROXY}
+      - OPENAI_API_KEY=${ONEAPI_API_KEY}
+      - OPENAI_API_BASE_URL=${ONEAPI_BASE_URL}/v1
+    networks:
+      - proxied
+    restart: always
+
+  one-api:
+    image: ghcr.io/songquanpeng/one-api:latest
+    container_name: one-api
+    ports:
+      - "33028:3000"
+    volumes:
+      - ./one-api:/data
+    environment:
+      - TZ=Asia/Shanghai
+      - https_proxy=${HTTPS_PROXY}
+      - no_proxy=dashscope.aliyuncs.com,aip.baidubce.com,api.deepseek.com
+    networks:
+      - proxied
+    restart: always
+
+  gpt_academic:
+    image: ghcr.io/binary-husky/gpt_academic_nolocal:master
+    container_name: gpt_academic
+    ports:
+      - "12303:12303"
+    environment:
+      - API_KEY=${ONEAPI_API_KEY}
+      - API_URL_REDIRECT={"https://api.openai.com/v1/chat/completions":"${ONEAPI_BASE_URL}/v1/chat/completions"}
+      - WEB_PORT=12303
+      # - LLM_MODEL=${DEFAULT_MODEL}
+      - AVAIL_LLM_MODELS=${CHATACADEMIC_MODELS}
+    networks:
+      - proxied
+    restart: unless-stopped
+
+  chat_next:
+    image: yidadaa/chatgpt-next-web:latest
+    container_name: chat_next
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENAI_API_KEY=${ONEAPI_API_KEY}
+      - CODE=${CHATNEXT_PASSWORD}
+      - DEFAULT_MODEL=${DEFAULT_MODEL}
+      - CUSTOM_MODELS=${CHATNEXT_MODELS}
+      - HOSTNAME=0.0.0.0
+      - BASE_URL=${ONEAPI_BASE_URL}
+    networks:
+      - proxied
+    restart: unless-stopped
+
+networks:
+  proxied:
+    external: true
